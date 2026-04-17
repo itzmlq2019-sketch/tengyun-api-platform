@@ -1,0 +1,18 @@
+server:
+  port: 8090 # 咱们 SDK 里写死发送请求的目标端口就是这个！
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: tengyun-api-interface-route # 路由的唯一标识（随便起）
+          uri: http://localhost:8123 # 🌟 转发的终点：咱们的模拟接口服务
+          predicates:
+            - Path=/api/** # 匹配规则：只要路径是以 /api/ 开头的请求，统统拦截并转发
+
+dubbo:
+  application:
+    name: tengyun-api-gateway
+  registry:
+    id: nacos-registry
+    address: nacos://localhost:8848 # 去同一个基站查电话本
