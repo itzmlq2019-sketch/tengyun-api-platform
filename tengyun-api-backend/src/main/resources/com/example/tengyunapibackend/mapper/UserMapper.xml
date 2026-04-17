@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.tengyunapibackend.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.tengyunapicommon.entity.User">
+            <id property="id" column="id" />
+            <result property="user_account" column="user_account" />
+            <result property="user_password" column="user_password" />
+            <result property="user_name" column="user_name" />
+            <result property="user_avatar" column="user_avatar" />
+            <result property="user_role" column="user_role" />
+            <result property="access_key" column="access_key" />
+            <result property="secret_key" column="secret_key" />
+            <result property="create_time" column="create_time" />
+            <result property="update_time" column="update_time" />
+            <result property="is_delete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_account,user_password,user_name,user_avatar,user_role,
+        access_key,secret_key,create_time,update_time,is_delete
+    </sql>
+
+    <resultMap id="AdminUserResultMap" type="com.example.tengyunapibackend.model.vo.UserAdminVO">
+        <id property="id" column="id"/>
+        <result property="userAccount" column="user_account"/>
+        <result property="userName" column="user_name"/>
+        <result property="userAvatar" column="user_avatar"/>
+        <result property="userRole" column="user_role"/>
+        <result property="accessKey" column="access_key"/>
+        <result property="secretKeyMasked" column="secret_key_masked"/>
+        <result property="boundInterfaceCount" column="bound_interface_count"/>
+        <result property="totalLeftNum" column="total_left_num"/>
+        <result property="totalInvokeNum" column="total_invoke_num"/>
+        <result property="successInvokeCount" column="success_invoke_count"/>
+        <result property="failedInvokeCount" column="failed_invoke_count"/>
+        <result property="lastInvokeTime" column="last_invoke_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="AdminUserWhere">
+        where u.is_delete = 0
+        <if test="userAccount != null and userAccount != ''">
+            and u.user_account like concat('%', #{userAccount}, '%')
+        </if>
+        <if test="userName != null and userName != ''">
+            and u.user_name like concat('%', #{userName}, '%')
+        </if>
+        <if test="userRole != null and userRole != ''">
+            and u.user_role = #{userRole}
+        </if>
+    </sql>
+
+    <select id="countAdminUsers" resultType="java.lang.Long">
+        select count(1)
+        from `user` u
+        <include refid="AdminUserWhere"/>
+    </select>
+
+    <select id="listAdminUsers" resultMap="AdminUserResultMap">
+        select
+            u.id,
+            u.user_account,
+            u.user_name,
+            u.user_avatar,
+            u.user_role,
+            <choose>
+                <when test="includeSensitiveFields">
+                    u.access_key as access_key,
+                    case
+                        when u.secret_key is null or trim(u.secret_key) = '' then null
+                        when char_length(trim(u.secret_key)) &lt;= 8 then '********'
+                        else concat(substring(trim(u.secret_key), 1, 4), '****', substring(trim(u.secret_key), -4))
+                    end as secret_key_masked,
+                </when>
+                <otherwise>
+                    null as access_key,
+                    null as secret_key_masked,
+                </otherwise>
+            </choose>
+            coalesce(uqs.bound_interface_count, 0) as bound_interface_count,
+            coalesce(uqs.total_left_num, 0) as total_left_num,
+            coalesce(uqs.total_invoke_num, 0) as total_invoke_num,
+            coalesce(ils.success_invoke_count, 0) as success_invoke_count,
+            coalesce(ils.failed_invoke_count, 0) as failed_invoke_count,
+            ils.last_invoke_time,
+            u.create_time,
+            u.update_time
+        from `user` u
+        left join (
+            select
+                ui.user_id,
+                count(distinct ui.interface_info_id) as bound_interface_count,
+                coalesce(sum(ui.left_num), 0) as total_left_num,
+                coalesce(sum(ui.total_num), 0) as total_invoke_num
+            from user_interface_info ui
+            where ui.is_delete = 0
+            group by ui.user_id
+        ) uqs on u.id = uqs.user_id
+        left join (
+            select
+                il.user_id,
+                sum(case when il.status = 0 then 1 else 0 end) as success_invoke_count,
+                sum(case when il.status = 1 then 1 else 0 end) as failed_invoke_count,
+                max(il.create_time) as last_invoke_time
+            from interface_invoke_log il
+            where il.is_delete = 0
+            group by il.user_id
+        ) ils on u.id = ils.user_id
+        <include refid="AdminUserWhere"/>
+        order by u.id desc
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.tengyunapibackend.mapper.UserInterfaceQuotaRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.tengyunapicommon.entity.UserInterfaceQuotaRecord">
+        <id property="id" column="id" />
+        <result property="userId" column="user_id" />
+        <result property="interfaceInfoId" column="interface_info_id" />
+        <result property="changeNum" column="change_num" />
+        <result property="beforeLeftNum" column="before_left_num" />
+        <result property="afterLeftNum" column="after_left_num" />
+        <result property="operateType" column="operate_type" />
+        <result property="description" column="description" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+        <result property="isDelete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,interface_info_id,change_num,before_left_num,after_left_num,
+        operate_type,description,create_time,update_time,is_delete
+    </sql>
+</mapper>

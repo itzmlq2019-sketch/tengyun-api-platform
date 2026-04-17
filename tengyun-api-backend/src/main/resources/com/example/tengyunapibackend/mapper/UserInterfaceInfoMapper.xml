@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.tengyunapibackend.mapper.UserInterfaceInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.tengyunapicommon.entity.UserInterfaceInfo">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="interfaceInfoId" column="interface_info_id" />
+            <result property="totalNum" column="total_num" />
+            <result property="leftNum" column="left_num" />
+            <result property="status" column="status" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+            <result property="isDelete" column="is_delete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,interface_info_id,total_num,left_num,status,
+        create_time,update_time,is_delete
+    </sql>
+
+    <resultMap id="QuotaStatsResultMap" type="com.example.tengyunapibackend.model.vo.InterfaceQuotaStatsVO">
+        <result property="interfaceInfoId" column="interface_info_id" />
+        <result property="boundUserCount" column="bound_user_count" />
+        <result property="totalLeftNum" column="total_left_num" />
+        <result property="totalInvokeNum" column="total_invoke_num" />
+    </resultMap>
+
+    <select id="listQuotaStatsByInterfaceIds" resultMap="QuotaStatsResultMap">
+        select
+            interface_info_id,
+            count(1) as bound_user_count,
+            coalesce(sum(left_num), 0) as total_left_num,
+            coalesce(sum(total_num), 0) as total_invoke_num
+        from user_interface_info
+        where is_delete = 0
+          and interface_info_id in
+        <foreach collection="interfaceInfoIds" item="interfaceInfoId" open="(" separator="," close=")">
+            #{interfaceInfoId}
+        </foreach>
+        group by interface_info_id
+    </select>
+
+    <resultMap id="UserQuotaStatsResultMap" type="com.example.tengyunapibackend.model.vo.UserQuotaStatsVO">
+        <result property="userId" column="user_id" />
+        <result property="boundInterfaceCount" column="bound_interface_count" />
+        <result property="totalLeftNum" column="total_left_num" />
+        <result property="totalInvokeNum" column="total_invoke_num" />
+    </resultMap>
+
+    <select id="listQuotaStatsByUserIds" resultMap="UserQuotaStatsResultMap">
+        select
+            user_id,
+            count(distinct interface_info_id) as bound_interface_count,
+            coalesce(sum(left_num), 0) as total_left_num,
+            coalesce(sum(total_num), 0) as total_invoke_num
+        from user_interface_info
+        where is_delete = 0
+          and user_id in
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        group by user_id
+    </select>
+
+    <update id="consumeInvokeCount">
+        update user_interface_info
+        set left_num = left_num - 1,
+            total_num = total_num + 1
+        where interface_info_id = #{interfaceInfoId}
+          and user_id = #{userId}
+          and status = 0
+          and is_delete = 0
+          and left_num > 0
+    </update>
+
+    <update id="grantInvokeCount">
+        update user_interface_info
+        set left_num = left_num + #{grantNum}
+        where id = #{id}
+          and is_delete = 0
+    </update>
+
+    <update id="revokeInvokeCount">
+        update user_interface_info
+        set left_num = left_num - #{revokeNum}
+        where id = #{id}
+          and is_delete = 0
+          and left_num >= #{revokeNum}
+    </update>
+
+    <update id="updateAuthorizationStatus">
+        update user_interface_info
+        set status = #{status}
+        where user_id = #{userId}
+          and interface_info_id = #{interfaceInfoId}
+          and is_delete = 0
+    </update>
+
+    <resultMap id="AuthorizationSummaryResultMap" type="com.example.tengyunapibackend.model.vo.AuthorizationSummaryVO">
+        <result property="totalBindingCount" column="total_binding_count" />
+        <result property="enabledBindingCount" column="enabled_binding_count" />
+        <result property="disabledBindingCount" column="disabled_binding_count" />
+        <result property="totalLeftNum" column="total_left_num" />
+        <result property="totalInvokeNum" column="total_invoke_num" />
+        <result property="affectedUserCount" column="affected_user_count" />
+        <result property="affectedInterfaceCount" column="affected_interface_count" />
+    </resultMap>
+
+    <select id="getAuthorizationSummary" resultMap="AuthorizationSummaryResultMap">
+        select
+            count(1) as total_binding_count,
+            coalesce(sum(case when status = 0 then 1 else 0 end), 0) as enabled_binding_count,
+            coalesce(sum(case when status = 1 then 1 else 0 end), 0) as disabled_binding_count,
+            coalesce(sum(left_num), 0) as total_left_num,
+            coalesce(sum(total_num), 0) as total_invoke_num,
+            count(distinct user_id) as affected_user_count,
+            count(distinct interface_info_id) as affected_interface_count
+        from user_interface_info
+        where is_delete = 0
+          <if test="userId != null">
+              and user_id = #{userId}
+          </if>
+          <if test="interfaceInfoId != null">
+              and interface_info_id = #{interfaceInfoId}
+          </if>
+          <if test="status != null">
+              and status = #{status}
+          </if>
+    </select>
+</mapper>
