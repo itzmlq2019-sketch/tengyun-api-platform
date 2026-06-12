@@ -3,6 +3,7 @@ package com.example.tengyunapiclientsdk.client;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import cn.hutool.http.Method;
 import com.example.tengyunapiclientsdk.utils.SignUtils;
 
 import java.util.HashMap;
@@ -58,5 +59,39 @@ public class TengyunApiClient {
                 .execute();
         System.out.println("网关返回状态码：" + response.getStatus());
         return response.body();
+    }
+
+    /**
+     * Invoke an API exposed through the gateway.
+     *
+     * @param path API path, for example {@code /api/name/user}
+     * @param method HTTP method
+     * @param body request body used for both the signature and the HTTP request
+     * @return response body
+     */
+    public String invoke(String path, String method, String body) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("path cannot be blank");
+        }
+        if (method == null || method.isBlank()) {
+            throw new IllegalArgumentException("method cannot be blank");
+        }
+
+        String requestBody = body == null ? "" : body;
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
+        Method httpMethod;
+        try {
+            httpMethod = Method.valueOf(method.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported HTTP method: " + method, e);
+        }
+
+        try (HttpResponse response = HttpRequest.of(GATEWAY_HOST + normalizedPath)
+                .method(httpMethod)
+                .addHeaders(getHeaderMap(requestBody))
+                .body(requestBody)
+                .execute()) {
+            return response.body();
+        }
     }
 }

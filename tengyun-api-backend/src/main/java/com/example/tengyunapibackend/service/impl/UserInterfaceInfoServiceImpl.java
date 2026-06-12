@@ -45,22 +45,22 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
         boolean result;
         if (userInterfaceInfo == null) {
             userInterfaceInfo = new UserInterfaceInfo();
-            userInterfaceInfo.setUserId(request.getUserId());
-            userInterfaceInfo.setInterfaceInfoId(request.getInterfaceInfoId());
-            userInterfaceInfo.setTotalNum(0);
-            userInterfaceInfo.setLeftNum(request.getGrantNum());
+            userInterfaceInfo.setUser_id(request.getUserId());
+            userInterfaceInfo.setInterface_info_id(request.getInterfaceInfoId());
+            userInterfaceInfo.setTotal_num(0);
+            userInterfaceInfo.setLeft_num(request.getGrantNum());
             userInterfaceInfo.setStatus(STATUS_ENABLED);
             afterLeftNum = request.getGrantNum();
             result = this.save(userInterfaceInfo);
         } else {
-            beforeLeftNum = userInterfaceInfo.getLeftNum() == null ? 0 : userInterfaceInfo.getLeftNum();
+            beforeLeftNum = userInterfaceInfo.getLeft_num() == null ? 0 : userInterfaceInfo.getLeft_num();
             int affectedRows = this.baseMapper.grantInvokeCount(userInterfaceInfo.getId(), request.getGrantNum());
             result = affectedRows > 0;
             if (result) {
                 UserInterfaceInfo refreshedInfo = this.getById(userInterfaceInfo.getId());
-                afterLeftNum = refreshedInfo == null || refreshedInfo.getLeftNum() == null
+                afterLeftNum = refreshedInfo == null || refreshedInfo.getLeft_num() == null
                         ? beforeLeftNum + request.getGrantNum()
-                        : refreshedInfo.getLeftNum();
+                        : refreshedInfo.getLeft_num();
             } else {
                 afterLeftNum = beforeLeftNum;
             }
@@ -90,7 +90,7 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
         if (userInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户接口授权记录不存在");
         }
-        int beforeLeftNum = userInterfaceInfo.getLeftNum() == null ? 0 : userInterfaceInfo.getLeftNum();
+        int beforeLeftNum = userInterfaceInfo.getLeft_num() == null ? 0 : userInterfaceInfo.getLeft_num();
         int revokeNum = request.getRevokeNum();
         if (beforeLeftNum < revokeNum) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "回收次数不能超过当前剩余额度");
@@ -100,9 +100,9 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
             return false;
         }
         UserInterfaceInfo refreshedInfo = this.getById(userInterfaceInfo.getId());
-        int afterLeftNum = refreshedInfo == null || refreshedInfo.getLeftNum() == null
+        int afterLeftNum = refreshedInfo == null || refreshedInfo.getLeft_num() == null
                 ? beforeLeftNum - revokeNum
-                : refreshedInfo.getLeftNum();
+                : refreshedInfo.getLeft_num();
 
         UserInterfaceQuotaRecord quotaRecord = new UserInterfaceQuotaRecord();
         quotaRecord.setUserId(request.getUserId());

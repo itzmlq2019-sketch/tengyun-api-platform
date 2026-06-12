@@ -46,7 +46,9 @@ public class InnerUserInterfaceInfoServiceImpl implements InnerUserInterfaceInfo
         queryWrapper.eq("user_id", userId);
         queryWrapper.eq("is_delete", 0);
         UserInterfaceInfo userInterfaceInfo = userInterfaceInfoService.getOne(queryWrapper);
-        if (userInterfaceInfo == null || userInterfaceInfo.getLeftNum() == null || userInterfaceInfo.getLeftNum() <= 0) {
+        if (userInterfaceInfo == null
+                || userInterfaceInfo.getLeft_num() == null
+                || userInterfaceInfo.getLeft_num() <= 0) {
             return false;
         }
         int affectedRows = userInterfaceInfoMapper.consumeInvokeCount(interfaceInfoId, userId);
@@ -54,10 +56,10 @@ public class InnerUserInterfaceInfoServiceImpl implements InnerUserInterfaceInfo
             return false;
         }
         UserInterfaceInfo refreshedInfo = userInterfaceInfoService.getById(userInterfaceInfo.getId());
-        if (refreshedInfo == null || refreshedInfo.getLeftNum() == null) {
+        if (refreshedInfo == null || refreshedInfo.getLeft_num() == null) {
             return false;
         }
-        int afterLeftNum = refreshedInfo.getLeftNum();
+        int afterLeftNum = refreshedInfo.getLeft_num();
         int beforeLeftNum = afterLeftNum + 1;
 
         UserInterfaceQuotaRecord quotaRecord = new UserInterfaceQuotaRecord();
